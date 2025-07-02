@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvestIQ - Stock Data Analytics</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .summary-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .summary-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .data-table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .data-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .info-section h3 {
+            margin-bottom: 15px;
+        }
+
+        .info-section ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .info-section li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-section li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .search-input, .search-btn {
+                width: 100%;
+            }
+            
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> InvestIQ</h1>
+            <p>Real-time Stock Data Analytics for CSE (Colombo Stock Exchange)</p>
+        </div>
+
+        <div class="search-section">
+            <h2><i class="fas fa-search"></i> Search Stock Data</h2>
+            <div class="search-form">
+                <input type="text" id="stockSymbol" class="search-input" placeholder="Enter CSE Symbol (e.g., JKH, ABAN)" maxlength="20">
+                <button onclick="fetchStockData()" class="search-btn" id="searchBtn">
+                    <i class="fas fa-chart-bar"></i> Get Stock Data
+                </button>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <i class="fas fa-spinner"></i>
+                <p>Fetching real-time data from TradingView...</p>
+            </div>
+        </div>
+
+        <div id="results" class="results-section">
+            <h2><i class="fas fa-analytics"></i> Stock Analysis Results</h2>
+            
+            <div id="summaryCards" class="summary-cards"></div>
+            
+            <div class="data-table-container">
+                <table id="dataTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Open (LKR)</th>
+                            <th>High (LKR)</th>
+                            <th>Low (LKR)</th>
+                            <th>Close (LKR)</th>
+                            <th>Volume</th>
+                            <th>Daily Change</th>
+                            <th>Change %</th>
+                            <th>Day Range</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataBody"></tbody>
+                </table>
+            </div>
+            
+            <button onclick="downloadCSV()" class="download-btn" id="downloadBtn">
+                <i class="fas fa-download"></i> Download CSV Report
+            </button>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+        <div class="info-section">
+            <h3><i class="fas fa-info-circle"></i> About InvestIQ</h3>
+            <ul>
+                <li>Real-time data from TradingView WebSocket</li>
+                <li>Comprehensive stock analysis for CSE listed companies</li>
+                <li>Daily price movements and volume analysis</li>
+                <li>Downloadable CSV reports for further analysis</li>
+                <li>Mobile-responsive design for all devices</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentSymbol = '';
+
+        // Allow Enter key to trigger search
+        document.getElementById('stockSymbol').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchStockData();
+            }
+        });
+
+        async function fetchStockData() {
+            const symbol = document.getElementById('stockSymbol').value.trim().toUpperCase();
+            
+            if (!symbol) {
+                showError('Please enter a valid stock symbol');
+                return;
+            }
+
+            currentSymbol = symbol;
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('searchBtn').disabled = true;
+
+            try {
+                const response = await fetch('/get_stock_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ symbol: symbol })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    showError(result.error || 'Failed to fetch stock data');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('searchBtn').disabled = false;
+            }
+        }
+
+        function displayResults(result) {
+            const { data, summary } = result;
+            
+            // Display summary cards
+            const summaryHTML = `
+                <div class="summary-card">
+                    <h3>Stock Symbol</h3>
+                    <div class="value">${summary.symbol}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Latest Price</h3>
+                    <div class="value">LKR ${summary.latest_price}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Trading Days</h3>
+                    <div class="value">${summary.total_days}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Highest Price</h3>
+                    <div class="value">LKR ${summary.highest_price}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Lowest Price</h3>
+                    <div class="value">LKR ${summary.lowest_price}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Best Day</h3>
+                    <div class="value ${summary.best_day >= 0 ? 'positive' : 'negative'}">${summary.best_day}%</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Worst Day</h3>
+                    <div class="value ${summary.worst_day >= 0 ? 'positive' : 'negative'}">${summary.worst_day}%</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Date Range</h3>
+                    <div class="value" style="font-size: 1rem;">${summary.date_range}</div>
+                </div>
+            `;
+            
+            document.getElementById('summaryCards').innerHTML = summaryHTML;
+
+            // Display data table
+            const tableBody = document.getElementById('dataBody');
+            tableBody.innerHTML = '';
+
+            // Show latest 50 records for better performance
+            const recentData = data.slice(-50).reverse();
+            
+            recentData.forEach(row => {
+                const tr = document.createElement('tr');
+                const changeClass = row.Daily_Change >= 0 ? 'positive' : 'negative';
+                const changePctClass = row.Daily_Change_Pct >= 0 ? 'positive' : 'negative';
+                
+                tr.innerHTML = `
+                    <td>${row.Date}</td>
+                    <td>${row.Open.toFixed(2)}</td>
+                    <td>${row.High.toFixed(2)}</td>
+                    <td>${row.Low.toFixed(2)}</td>
+                    <td>${row.Close.toFixed(2)}</td>
+                    <td>${row.Volume.toLocaleString()}</td>
+                    <td class="${changeClass}">${row.Daily_Change || 'N/A'}</td>
+                    <td class="${changePctClass}">${row.Daily_Change_Pct || 'N/A'}%</td>
+                    <td>${row.Day_Range.toFixed(2)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        async function downloadCSV() {
+            if (!currentSymbol) return;
+
+            try {
+                const response = await fetch(`/download_csv/${currentSymbol}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('CSV file generated successfully: ' + result.filename);
+                } else {
+                    alert('Error generating CSV: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error downloading CSV: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
